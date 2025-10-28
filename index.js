@@ -1,6 +1,7 @@
 import { connect } from 'cloudflare:sockets';
 
 /**
+ * - Last updated: Thursday, 23 Oct 2025, 04:20 AM.
  * - UUID: To generate your own UUID, visit: https://www.uuidgenerator.net
  *   You can add multiple UUIDs by separating them with a comma (e.g., 'uuid1, uuid2').
  * 
@@ -324,7 +325,7 @@ function generateBeautifulConfigPage(userID, hostName, proxyAddress) {
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>VLESS Proxy Configuration</title>
-    <link rel="icon" href="https://raw.githubusercontent.com/NiREvil/zizifn/refs/heads/Legacy/assets/favicon.png" type="image/png">
+    <link rel="icon" href="https://raw.githubusercontent.com/NiREvil/zizifn/refs/heads/Legacy/assets/raven.svg" type="image/svg">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@300..700&display=swap" rel="stylesheet">
@@ -1314,8 +1315,10 @@ function getPageScript() {
           ip: document.getElementById(\`\${prefix}-ip\`), location: document.getElementById(\`\${prefix}-location\`),
           isp: document.getElementById(\`\${prefix}-isp\`)
         };
-        if (!geo) {
-          Object.values(elements).forEach(el => { if(el) el.innerHTML = "N/A"; });
+        if (!geo || geo.error) {
+          const errorMessage = geo ? geo.reason : 'N/A';
+          Object.values(elements).forEach(el => { if(el) el.innerHTML = errorMessage; });
+          if (elements.ip) elements.ip.innerHTML = "N/A";
           return;
         }
         if (elements.ip) elements.ip.textContent = geo.ip || "N/A";
@@ -1327,18 +1330,35 @@ function getPageScript() {
           let textPart = [city, countryName].filter(Boolean).join(', ');
           elements.location.innerHTML = (flagElementHtml || textPart) ? \`\${flagElementHtml}\${textPart}\`.trim() : "N/A";
         }
-        if (elements.isp) elements.isp.textContent = geo.isp || geo.organisation || geo.as_name || geo.as || 'N/A';
+        if (elements.isp) elements.isp.textContent = geo.isp || geo.organization || geo.org || 'N/A';
       }
+
 
       async function fetchIpApiIoInfo(ip) {
         try {
-          const response = await fetch(\`https://ip-api.io/json/\${ip}\`);
+          const response = await fetch(\`https://ipapi.co/\${ip}/json/\`);
           if (!response.ok) throw new Error(\`HTTP error! status: \${response.status}\`);
           return await response.json();
         } catch (error) {
-          console.error('IP API Error (ip-api.io):', error);
+          console.error('IP API Error (ipapi.co):', error);
           return null;
         }
+      }
+
+      function showError(prefix, message = "Could not load data", originalHostForProxy = null) {
+        const errorMessage = "N/A";
+        const elements = (prefix === 'proxy') 
+          ? ['host', 'ip', 'location', 'isp']
+          : ['ip', 'location', 'isp', 'proxy'];
+        
+        elements.forEach(key => {
+          const el = document.getElementById(\`\${prefix}-\${key}\`);
+          if (!el) return;
+          if (key === 'host' && prefix === 'proxy') el.textContent = originalHostForProxy || errorMessage;
+          else if (key === 'proxy' && prefix === 'client') el.innerHTML = \`<span class="badge badge-neutral">N/A</span>\`;
+          else el.innerHTML = errorMessage;
+        });
+        console.warn(\`\${prefix} data loading failed: \${message}\`);
       }
 
       function showError(prefix, message = "Could not load data", originalHostForProxy = null) {
