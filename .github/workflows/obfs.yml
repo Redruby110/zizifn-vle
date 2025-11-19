@@ -50,7 +50,7 @@ jobs:
       - name: Add mulìtiline version comment to _worker.js
         run: |
           if [ -s _worker.js ]; then
-            VERSION_BLOCK="// <!--GAMFC--> version base on commit ${{ github.sha }}, time is $(date -u '+%Y-%m-%d %H:%M:%S') UTC<!--We are all REvil-->\n// @ts-ignore"
+            VERSION_BLOCK="// <!--GAMFC-->version base on commit: ${{ github.sha }} - last update: $(date -u '+%Y-%m-%d %H:%M:%S') UTC <!--GAMFC-END-->."
             {
               printf '%b\n\n' "$VERSION_BLOCK"
               cat _worker.js
@@ -62,8 +62,8 @@ jobs:
 
       - name: Commit and push changes
         run: |
-          git config --local user.name "NET Sentinel Bot"
+          git config --local user.name "NET-Sentinel Bot"
           git config --local user.email "224584266+NetSentinel-Bot@users.noreply.github.com"
           git add _worker.js
-          git commit -m "Build: npm run gentle obfuscation and version update" -m "Based on commit ${{ github.sha }}" || echo "No changes to commit."
+          git commit -m "build: compact bundle and insert version metadata" -m "Based on commit ${{ github.sha }}" || echo "No changes to commit."
           git push origin ${{ github.ref }}
